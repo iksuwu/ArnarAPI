@@ -1,3 +1,4 @@
+-- Updated New API
 local HttpService = game:GetService("HttpService")
 local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
 local Players = game:GetService("Players")
@@ -7,7 +8,8 @@ local HWID = RbxAnalyticsService:GetClientId()
 
 local RAW_URL = "https://raw.githubusercontent.com/iksuwu/ArnarAPI/refs/heads/main/Data.json"
 
-local request = http_request or request or syn and syn.request
+-- リクエスト関数の安全な取得
+local request = (syn and syn.request) or (http and http.request) or http_request or request
 
 local AmarAPI = {}
 local cache = nil
@@ -33,7 +35,7 @@ local function fetchWhitelist()
 end
 
 local function kick(reason)
-    LocalPlayer:Kick("\n[Premium]\n" .. reason)
+    LocalPlayer:Kick("\n[Amar Premium]\n" .. reason)
 end
 
 function AmarAPI.CheckKey(key, callbacks)
@@ -48,29 +50,33 @@ function AmarAPI.CheckKey(key, callbacks)
     local keyData = data[key]
 
     if not keyData then
-        callbacks.FailCall and callbacks.FailCall("Invalid Key")
+        -- 安全なコールバック呼び出し
+        if callbacks.FailCall then callbacks.FailCall("Invalid Key") end
         kick("Invalid Key")
         return
     end
 
     if keyData.Blacklist then
-        callbacks.FailCall and callbacks.FailCall("Blacklisted Key")
+        if callbacks.FailCall then callbacks.FailCall("Blacklisted Key") end
         kick("Blacklisted Key")
         return
     end
 
-    if not keyData.HWID then
-        callbacks.SuccCall and callbacks.SuccCall(keyData)
+    -- HWIDが登録されていない場合
+    if not keyData.HWID or keyData.HWID == "None" or keyData.HWID == "" then
+        if callbacks.SuccCall then callbacks.SuccCall(keyData) end
         return
     end
 
+    -- HWID一致確認
     if keyData.HWID == HWID then
-        callbacks.SuccCall and callbacks.SuccCall(keyData)
+        if callbacks.SuccCall then callbacks.SuccCall(keyData) end
         return
     end
 
-    callbacks.FailCall and callbacks.FailCall("HWID Mismatch")
-    kick("HWID mismatch. Reset HWID")
+    -- HWID不一致
+    if callbacks.FailCall then callbacks.FailCall("HWID Mismatch") end
+    kick("HWID mismatch. Reset HWID via Discord Bot.")
 end
 
 function AmarAPI.GetHWID(key)
@@ -89,20 +95,19 @@ function AmarAPI.IsBlacklisted(key)
 end
 
 function AmarAPI.BindHWID(key)
-    local payload = {
-        key = key,
-        hwid = HWID,
-        player = LocalPlayer.Name
-    }
+    -- 現在のシステムではBot側で登録するため、ここでは成功を返すのみ
     return true
 end
 
 function AmarAPI.Auth(key)
     AmarAPI.CheckKey(key, {
         SuccCall = function(data)
-            if not data.HWID then
+            if not data.HWID or data.HWID == "None" or data.HWID == "" then
                 AmarAPI.BindHWID(key)
             end
+        end,
+        FailCall = function(err)
+            warn("Auth Error: " .. tostring(err))
         end
     })
 end
