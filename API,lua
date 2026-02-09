@@ -1,0 +1,110 @@
+local HttpService = game:GetService("HttpService")
+local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
+local HWID = RbxAnalyticsService:GetClientId()
+
+local RAW_URL = "https://raw.githubusercontent.com/iksuwu/ArnarAPI/refs/heads/main/Data.json"
+
+local request = http_request or request or syn and syn.request
+
+local AmarAPI = {}
+local cache = nil
+local lastFetch = 0
+local CACHE_TIME = 30 
+
+local function fetchWhitelist()
+    if cache and (tick() - lastFetch < CACHE_TIME) then
+        return cache
+    end
+
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet(RAW_URL))
+    end)
+
+    if not success or type(result) ~= "table" then
+        return nil
+    end
+
+    cache = result
+    lastFetch = tick()
+    return result
+end
+
+local function kick(reason)
+    LocalPlayer:Kick("\n[Premium]\n" .. reason)
+end
+
+function AmarAPI.CheckKey(key, callbacks)
+    callbacks = callbacks or {}
+    local data = fetchWhitelist()
+
+    if not data then
+        kick("Whitelist load failed.")
+        return
+    end
+
+    local keyData = data[key]
+
+    if not keyData then
+        callbacks.FailCall and callbacks.FailCall("Invalid Key")
+        kick("Invalid Key")
+        return
+    end
+
+    if keyData.Blacklist then
+        callbacks.FailCall and callbacks.FailCall("Blacklisted Key")
+        kick("Blacklisted Key")
+        return
+    end
+
+    if not keyData.HWID then
+        callbacks.SuccCall and callbacks.SuccCall(keyData)
+        return
+    end
+
+    if keyData.HWID == HWID then
+        callbacks.SuccCall and callbacks.SuccCall(keyData)
+        return
+    end
+
+    callbacks.FailCall and callbacks.FailCall("HWID Mismatch")
+    kick("HWID mismatch. Reset HWID")
+end
+
+function AmarAPI.GetHWID(key)
+    local data = fetchWhitelist()
+    return data and data[key] and data[key].HWID
+end
+
+function AmarAPI.GetDiscord(key)
+    local data = fetchWhitelist()
+    return data and data[key] and data[key].Discord_Name
+end
+
+function AmarAPI.IsBlacklisted(key)
+    local data = fetchWhitelist()
+    return data and data[key] and data[key].Blacklist
+end
+
+function AmarAPI.BindHWID(key)
+    local payload = {
+        key = key,
+        hwid = HWID,
+        player = LocalPlayer.Name
+    }
+    return true
+end
+
+function AmarAPI.Auth(key)
+    AmarAPI.CheckKey(key, {
+        SuccCall = function(data)
+            if not data.HWID then
+                AmarAPI.BindHWID(key)
+            end
+        end
+    })
+end
+
+return AmarAPI
