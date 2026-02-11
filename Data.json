@@ -38,7 +38,7 @@
     "EMAGC0ZG1E7V": {
         "Discord_ID": "1370501662195585145",
         "Discord_Name": "buildashogai",
-        "HWID": null,
+        "HWID": "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/RequideSync/PH/refs/heads/main/HWID_GET.lua\"))()",
         "Blacklist": false
     }
 }
