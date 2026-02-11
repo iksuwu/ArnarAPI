@@ -34,5 +34,11 @@
         "Discord_Name": ".dcus",
         "HWID": "\u306a\u30fc\u304b\u30fc\u306a\u30fc\u3044\u30fc\u3084\u30fc\u304f\u30fc\u305d\u30fc\u304f\u30fc\u30fc\u3057\u30fc\u30fc\u30fc\u305f",
         "Blacklist": false
+    },
+    "EMAGC0ZG1E7V": {
+        "Discord_ID": "1370501662195585145",
+        "Discord_Name": "buildashogai",
+        "HWID": null,
+        "Blacklist": false
     }
 }
